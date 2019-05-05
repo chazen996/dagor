@@ -33,6 +33,9 @@ public class Service {
     }
 
     public int calculateAverageWaitTime(){
+        if(requests.size()==0){
+            return 0;
+        }
         Iterator<Request> it = requests.iterator();
         int sum = 0;
         while (it.hasNext()){
@@ -76,9 +79,21 @@ public class Service {
         }
     }
 
+    private boolean overloadDetection(){
+        int averageWaitTime = calculateAverageWaitTime();
+        if(averageWaitTime>=Config.AVERAGE_WAITIE_TIME){
+            System.out.println("*服务"+ serviceName + "已过载，队列平均等待时间：" +averageWaitTime +"*");
+            return true;
+        }
+        return false;
+    }
+
     public void run(int time){
         List<Request> toBeDeleted = new ArrayList<>();
         int maxRequestNum = Config.MAX_REQUEST_NUM;
+        if(overloadDetection()){
+
+        }
         for (int i = 0; i < requests.size(); i++) {
             Request request = requests.get(i);
             if(request.status==RequestStatus.BLOCKING){

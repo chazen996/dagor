@@ -5,6 +5,7 @@ public class Config {
     public static final int MAX_PRIORITY = 128;
     public static final int DEFAULT_TIMEOUT = 500;
 //    public static final int DEFAULT_TIMEOUT = 25;
+    public static final int AVERAGE_WAITIE_TIME = 20;
     public static int calculateUserPriority(int userId){
         return userId%MAX_PRIORITY;
     }

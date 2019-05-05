@@ -49,7 +49,7 @@ public class DagorSystem {
         while (str!=null){
             String[] args = str.split(" ");
             User user = new User(args[0]);
-            Request request = new Request(args[1],user,Integer.valueOf(args[2]));
+            new Request(args[1],user,Integer.valueOf(args[2]));
             str = bufferedReader.readLine();
         }
         bufferedReader.close();
@@ -61,7 +61,7 @@ public class DagorSystem {
         registService();
         submitRequest();
         int time = 0;
-        boolean done = true;
+        boolean done;
         while (true){
             done = true;
             for (String key:serviceMap.keySet()) {
