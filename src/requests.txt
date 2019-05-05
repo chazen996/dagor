@@ -1,2 +1,6 @@
 chazen1 LogIn 500
-chazen2 Message 600
+chazen2 Payment 600
+chazen3 Payment 600
+chazen4 Account 300
+chazen5 Account 300
+chazen6 Account 300

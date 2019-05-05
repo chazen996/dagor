@@ -1,3 +1,6 @@
 LogIn 10
-Message 15
-Account 12 LogIn
+Payment 10
+Account 12 LogIn,Payment
+Notification 15 LogIn
+Contact 20 Notification
+Profile 18 Notification

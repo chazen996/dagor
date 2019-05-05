@@ -11,9 +11,9 @@ public class Request {
     public RequestStatus status = RequestStatus.BLOCKING;
     public List<Request> followRequests = new ArrayList<>();
     private int workload;
-    public int readyTime = -1;
+    public int readyTime = 0;
     public int runTime = -1;
-    public int startTime = -1;
+    public int startTime = 0;
     public Request priorRequest = null;
 
     private static int baseRequestId = 1;

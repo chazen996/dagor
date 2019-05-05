@@ -42,29 +42,42 @@ public class Service {
         return sum/requests.size();
     }
 
-    private void interruptRequest_tool(Request request){
+    private void interruptRequest_tool(Request request, Service targetService){
         Service service = DagorSystem.getServiceFromRequest(request);
-        service.requests.remove(request);
+        System.out.println("运行超时，请求"+ request.getRequestName() +"已终止");
+        if(service!=targetService){
+            service.requests.remove(request);
+        }
         if(request.isIndependent()){
             return;
         }
         Iterator<Request> it = request.followRequests.iterator();
         while (it.hasNext()){
             Request temp = it.next();
-            interruptRequest_tool(temp);
+            interruptRequest_tool(temp,targetService);
         }
     }
 
     private void interruptRequest(Request request){
         Request priorRequest = request.priorRequest;
+        Service targetService = DagorSystem.getServiceFromRequest(request);
         while (priorRequest!=null){
             request = priorRequest;
             priorRequest = priorRequest.priorRequest;
         }
-        interruptRequest_tool(request);
+        interruptRequest_tool(request,targetService);
+    }
+
+    private void printCompletedRequest(Request request, int currentTime){
+        if(request.status==RequestStatus.FINISHED){
+            System.out.println("时刻: "+currentTime);
+            System.out.println("请求" + request.getRequestName() +"已完成, 执行时长："+
+                    request.runTime + "s, 等待时长：" + request.waitTime + "s");
+        }
     }
 
     public void run(int time){
+        List<Request> toBeDeleted = new ArrayList<>();
         int maxRequestNum = Config.MAX_REQUEST_NUM;
         for (int i = 0; i < requests.size(); i++) {
             Request request = requests.get(i);
@@ -74,7 +87,8 @@ public class Service {
                 }else{
                     request.waitTime++;
                 }
-            }else if(request.status==RequestStatus.READY){
+            }
+            if(request.status==RequestStatus.READY){
                 if(dependencies.size()!=0){
                     Iterator<Service> it = dependencies.iterator();
                     while (it.hasNext()){
@@ -86,30 +100,39 @@ public class Service {
                     request.status = RequestStatus.WAITING;
                 }else{
                     request.status = RequestStatus.RUNNING;
+                    request.startTime = time;
                 }
                 request.readyTime = time;
-            }else if(request.status==RequestStatus.WAITING){
+            }
+            if(request.status==RequestStatus.WAITING){
                 if(request.isIndependent()){
                     request.status = RequestStatus.RUNNING;
                     request.startTime = time;
                 }
-            }else if(request.status==RequestStatus.RUNNING){
+            }
+            if(request.status==RequestStatus.RUNNING){
                 int runTime = time - request.startTime;
-                if(runTime>Config.DEFAULT_TIMEOUT){//超时
+                int executTime = time - request.readyTime;
+                if(executTime>=Config.DEFAULT_TIMEOUT){//超时
+                    toBeDeleted.add(request);
                     interruptRequest(request);
                 }else{
                     if(runTime>=request.getWorkload()){// 任务完成
                         Request priorRequest = request.priorRequest;
                         request.status = RequestStatus.FINISHED;
                         request.runTime = time - request.readyTime;
-                        System.out.println(request.getRequestName() +" ---> "+ request.runTime);
+                        printCompletedRequest(request,time);
                         if(priorRequest!=null){
                             priorRequest.deleteDependency(request);
                         }
-                        requests.remove(i);
-                        i--;
+                        toBeDeleted.add(request);
                     }
                 }
+            }
+        }
+        if(toBeDeleted.size()!=0){
+            for (Request request:toBeDeleted) {
+                requests.remove(request);
             }
         }
     }

@@ -26,8 +26,11 @@ public class DagorSystem {
             if(!serviceMap.containsKey(args[0])){
                 Service service = new Service(Integer.valueOf(args[1]),args[0]);
                 if(args.length==3){
-                    Service priorService = serviceMap.get(args[2]);
-                    priorService.addDependency(service);
+                    String[] priorServiceNameList = args[2].split(",");
+                    for (String priorServiceName:priorServiceNameList) {
+                        Service priorService = serviceMap.get(priorServiceName);
+                        priorService.addDependency(service);
+                    }
                 }
                 serviceMap.put(args[0],service);
             }
