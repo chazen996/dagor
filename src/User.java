@@ -1,13 +1,11 @@
 public class User {
     private String username;
-    private int userId;
 
-    public int getUserId() {
-        return userId;
+    public int getUserId(){
+        return username.hashCode();
     }
 
-    public User(String username, int userId) {
+    public User(String username) {
         this.username = username;
-        this.userId = userId;
     }
 }

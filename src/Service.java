@@ -28,6 +28,10 @@ public class Service {
         requests.add(request);
     }
 
+    public boolean isFree(){
+        return requests.size()==0;
+    }
+
     public int calculateAverageWaitTime(){
         Iterator<Request> it = requests.iterator();
         int sum = 0;
@@ -109,9 +113,4 @@ public class Service {
             }
         }
     }
-
-    public boolean isFree(){
-        return requests.size()==0;
-    }
-
 }
