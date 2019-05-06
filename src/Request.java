@@ -19,6 +19,11 @@ public class Request {
     private static int baseRequestId = 1;
     public int requestId;
 
+    private int priority;
+
+    public int getPriority(){
+        return priority;
+    }
 
 
     public int getWorkload() {
@@ -41,27 +46,27 @@ public class Request {
     public Request(String serviceType, User user, int bussinessPriority) {
         this.serviceType = serviceType;
         this.user = user;
-        this.bussinessPriority = bussinessPriority;
         requestId = baseRequestId++;
         this.requestName = serviceType+"@"+requestId;
 
+        if(bussinessPriority>=Config.MAX_PRIORITY_BASE_NUMBER) this.bussinessPriority = Config.MAX_PRIORITY_BASE_NUMBER-1;
+        if(bussinessPriority<0) this.bussinessPriority = 0;
+        this.bussinessPriority = bussinessPriority;
+
+        calucatePriority();
         Service service = DagorSystem.getServiceFromRequest(this);
         service.handleRequest(this);
     }
 
-    public Request(String serviceType, String requestName, User user, int bussinessPriority) {
-        this(serviceType,user,bussinessPriority);
-        this.requestName = requestName;
-    }
-
-    public int getPriority(){
+    private void calucatePriority(){
         double rate = Config.RATE_PRIORITY;
+        int maxPriorityBaseNumber = Config.MAX_PRIORITY_BASE_NUMBER;
         int maxPriority = Config.MAX_PRIORITY;
         int userPriority = Config.calculateUserPriority(user.getUserId());
-        int priority = (int) (rate*bussinessPriority + (1-rate)*userPriority);
-        if(priority>maxPriority) priority = maxPriority;
-        if(priority<=0) priority = 1;
-        return priority;
+        int priority = (int)((rate*bussinessPriority + (1-rate)*userPriority)/maxPriorityBaseNumber*128);
+        if(priority>=maxPriority) priority = maxPriority-1;
+        if(priority<0) priority = 0;
+        this.priority = priority+1;
     }
 
     public String getServiceType() {

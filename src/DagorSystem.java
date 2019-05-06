@@ -1,5 +1,3 @@
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,7 +13,6 @@ public class DagorSystem {
         return serviceMap.get(serviceName);
     }
 
-    @Test
     private static void registService() throws Exception{
         InputStream in = DagorSystem.class.getClassLoader().getResourceAsStream("services.txt");
         InputStreamReader inputStreamReader = new InputStreamReader(in);

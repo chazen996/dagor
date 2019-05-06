@@ -8,6 +8,8 @@ public class Service {
     private List<Service> dependencies = new ArrayList<>();
     public List<Request> requests = new ArrayList<>();
 
+    private int priorityLevel = Config.MAX_PRIORITY;
+
     public Service(int worload, String serviceName) {
         this.worload = worload;
         this.serviceName = serviceName;
@@ -45,9 +47,17 @@ public class Service {
         return sum/requests.size();
     }
 
-    private void interruptRequest_tool(Request request, Service targetService){
+    private void printTime(int currentTime){
+        System.out.println("时刻: "+ currentTime + " ----------------------------------------------------------------------");
+    }
+
+    private void interruptRequest_tool(Request request, Service targetService, boolean isAccessControl){
         Service service = DagorSystem.getServiceFromRequest(request);
-        System.out.println("运行超时，请求"+ request.getRequestName() +"已终止");
+        if(isAccessControl){
+            System.out.println("【准入控制】请求"+request.getRequestName()+"的优先级为："+request.getPriority()+"不满足截止条件,已终止");
+        }else{
+            System.out.println("【运行超时】请求"+ request.getRequestName() +"已终止");
+        }
         if(service!=targetService){
             service.requests.remove(request);
         }
@@ -57,43 +67,49 @@ public class Service {
         Iterator<Request> it = request.followRequests.iterator();
         while (it.hasNext()){
             Request temp = it.next();
-            interruptRequest_tool(temp,targetService);
+            interruptRequest_tool(temp,targetService,isAccessControl);
         }
     }
 
-    private void interruptRequest(Request request){
+    private void interruptRequest(Request request, boolean isAccessControl){
         Request priorRequest = request.priorRequest;
         Service targetService = DagorSystem.getServiceFromRequest(request);
         while (priorRequest!=null){
             request = priorRequest;
             priorRequest = priorRequest.priorRequest;
         }
-        interruptRequest_tool(request,targetService);
+        interruptRequest_tool(request,targetService, isAccessControl);
     }
 
     private void printCompletedRequest(Request request, int currentTime){
         if(request.status==RequestStatus.FINISHED){
-            System.out.println("时刻: "+currentTime);
-            System.out.println("请求" + request.getRequestName() +"已完成, 执行时长："+
+            printTime(currentTime);
+            System.out.println("【已完成】请求" + request.getRequestName() +"已完成, 执行时长："+
                     request.runTime + "s, 等待时长：" + request.waitTime + "s");
         }
     }
 
-    private boolean overloadDetection(){
+    private boolean overloadDetection(int currentTime){
         int averageWaitTime = calculateAverageWaitTime();
         if(averageWaitTime>=Config.AVERAGE_WAITIE_TIME){
-            System.out.println("*服务"+ serviceName + "已过载，队列平均等待时间：" +averageWaitTime +"*");
+            printTime(currentTime);
+            System.out.println("*服务"+ serviceName + "已过载，队列平均等待时间：" +averageWaitTime +"s*");
+            System.out.println("*开始执行准入控制，当前队列截止准入优先级："+priorityLevel+"*");
             return true;
         }
         return false;
     }
 
+
+    private void accessControl(Request request){
+        interruptRequest(request,true);
+        requests.remove(request);
+    }
+
     public void run(int time){
         List<Request> toBeDeleted = new ArrayList<>();
         int maxRequestNum = Config.MAX_REQUEST_NUM;
-        if(overloadDetection()){
-
-        }
+        int maxPriority = Integer.MIN_VALUE;
         for (int i = 0; i < requests.size(); i++) {
             Request request = requests.get(i);
             if(request.status==RequestStatus.BLOCKING){
@@ -130,7 +146,8 @@ public class Service {
                 int executTime = time - request.readyTime;
                 if(executTime>=Config.DEFAULT_TIMEOUT){//超时
                     toBeDeleted.add(request);
-                    interruptRequest(request);
+                    printTime(time);
+                    interruptRequest(request,false);
                 }else{
                     if(runTime>=request.getWorkload()){// 任务完成
                         Request priorRequest = request.priorRequest;
@@ -144,10 +161,26 @@ public class Service {
                     }
                 }
             }
+            if(request.getPriority()>maxPriority){
+                maxPriority = request.getPriority();
+            }
         }
         if(toBeDeleted.size()!=0){
             for (Request request:toBeDeleted) {
                 requests.remove(request);
+            }
+        }
+        priorityLevel = maxPriority-1;
+        if(overloadDetection(time)){
+            toBeDeleted = new ArrayList<>();
+            for (int i = 0; i < requests.size(); i++) {
+                Request request = requests.get(i);
+                if(priorityLevel<request.getPriority()){
+                    toBeDeleted.add(request);
+                }
+            }
+            for (Request request:toBeDeleted) {
+                accessControl(request);
             }
         }
     }
