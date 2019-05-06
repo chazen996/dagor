@@ -66,7 +66,7 @@ public class Request {
         int priority = (int)((rate*bussinessPriority + (1-rate)*userPriority)/maxPriorityBaseNumber*128);
         if(priority>=maxPriority) priority = maxPriority-1;
         if(priority<0) priority = 0;
-        this.priority = priority+1;
+        this.priority = maxPriority - priority;
     }
 
     public String getServiceType() {

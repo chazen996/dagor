@@ -48,13 +48,15 @@ public class Service {
     }
 
     private void printTime(int currentTime){
-        System.out.println("时刻: "+ currentTime + " ----------------------------------------------------------------------");
+        System.out.println("时刻: "+ currentTime +
+                " ----------------------------------------------------------------------");
     }
 
     private void interruptRequest_tool(Request request, Service targetService, boolean isAccessControl){
         Service service = DagorSystem.getServiceFromRequest(request);
         if(isAccessControl){
-            System.out.println("【准入控制】请求"+request.getRequestName()+"的优先级为："+request.getPriority()+"不满足截止条件,已终止");
+            System.out.println("【准入控制】请求"+request.getRequestName()+"的优先级为："+
+                    request.getPriority()+", 满足截止条件,已终止");
         }else{
             System.out.println("【运行超时】请求"+ request.getRequestName() +"已终止");
         }
