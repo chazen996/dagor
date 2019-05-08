@@ -3,12 +3,12 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Service {
-    private int worload;
-    private String serviceName;
-    private List<Service> dependencies = new ArrayList<>();
-    public List<Request> requests = new ArrayList<>();
+    private int worload;    //工作量，该属性将影响提交到当前服务请求的执行时间，在提交某个请求时同步为其赋予实际的工作量
+    private String serviceName; // 当前服务名
+    private List<Service> dependencies = new ArrayList<>(); // 当前服务所依赖的服务
+    public List<Request> requests = new ArrayList<>();  // 当前服务下提交的请求
 
-    private int priorityLevel = Config.MAX_PRIORITY;
+    private int priorityLevel = Config.MAX_PRIORITY;    // 当前服务的截止准入优先级
 
     public Service(int worload, String serviceName) {
         this.worload = worload;
@@ -73,6 +73,7 @@ public class Service {
         }
     }
 
+    /* 当请求出现超时或违反准入控制原则时，递归终止整条服务调用链上的所有请求 */
     private void interruptRequest(Request request, boolean isAccessControl){
         Request priorRequest = request.priorRequest;
         Service targetService = DagorSystem.getServiceFromRequest(request);
@@ -91,6 +92,7 @@ public class Service {
         }
     }
 
+    /* 过载检测：判断当前服务是否过载，并根据情况返回true或false */
     private boolean overloadDetection(int currentTime){
         int averageWaitTime = calculateAverageWaitTime();
         if(averageWaitTime>=Config.AVERAGE_WAITIE_TIME){
@@ -102,10 +104,19 @@ public class Service {
         return false;
     }
 
-
-    private void accessControl(Request request){
-        interruptRequest(request,true);
-        requests.remove(request);
+    /* 准入控制：当前服务出现过载时，实施准入控制机制，缓解服务的压力 */
+    private void accessControl() {
+        List<Request> toBeDeleted = new ArrayList<>();
+        for (int i = 0; i < requests.size(); i++) {
+            Request request = requests.get(i);
+            if(priorityLevel<request.getPriority()){
+                toBeDeleted.add(request);
+            }
+        }
+        for (Request request:toBeDeleted) {
+            interruptRequest(request,true);
+            requests.remove(request);
+        }
     }
 
     public void run(int time){
@@ -174,16 +185,7 @@ public class Service {
         }
         priorityLevel = maxPriority-1;
         if(overloadDetection(time)){
-            toBeDeleted = new ArrayList<>();
-            for (int i = 0; i < requests.size(); i++) {
-                Request request = requests.get(i);
-                if(priorityLevel<request.getPriority()){
-                    toBeDeleted.add(request);
-                }
-            }
-            for (Request request:toBeDeleted) {
-                accessControl(request);
-            }
+            accessControl();
         }
     }
 }

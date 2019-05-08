@@ -6,13 +6,16 @@ import java.util.Map;
 
 public class DagorSystem {
 
+    /* 使用Map模拟服务中心，所有的服务都在此Map中注册 */
     private static Map<String,Service> serviceMap = new LinkedHashMap<>();
 
+    /* 通过Request获取与其对应的服务 */
     public static Service getServiceFromRequest(Request request){
         String serviceName = request.getServiceType();
         return serviceMap.get(serviceName);
     }
 
+    /* 注册服务，通过读取services.txt文件动态注册服务，书写规则为'入口服务 工作量 [跳跃服务(所依赖的服务)]' */
     private static void registService() throws Exception{
         InputStream in = DagorSystem.class.getClassLoader().getResourceAsStream("services.txt");
         InputStreamReader inputStreamReader = new InputStreamReader(in);
@@ -38,6 +41,7 @@ public class DagorSystem {
         in.close();
     }
 
+    /* 提交请求, 通过读取requests.txt文件动态生成请求，书写规则为'用户名 服务名 业务优先级'  */
     private static void submitRequest() throws Exception{
         InputStream in = DagorSystem.class.getClassLoader().getResourceAsStream("requests.txt");
         InputStreamReader inputStreamReader = new InputStreamReader(in);
@@ -54,6 +58,7 @@ public class DagorSystem {
         in.close();
     }
 
+    /* 入口函数，模拟系统从0时刻开始运行直到所有的请求都被完成 */
     public static void main(String[] args) throws Exception {
         registService();
         submitRequest();
